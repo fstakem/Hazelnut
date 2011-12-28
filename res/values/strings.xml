@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hazelnut</string>
+    <string name="load_local_character_menu_item">Load Local Animation</string>
+    <string name="find_remote_characters_menu_item">Find Remote Animation</string>
+    <string name="settings_menu_item">Settings</string>
+    <string name="about_menu_item">About</string>
+</resources>

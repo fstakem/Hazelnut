@@ -53,8 +53,8 @@ public class RenderingEngineActivity extends Activity
 	
 	// Interaction constants
 	private static final int LONG_PRESS_THRESHOLD_MS = 1000;
-	private static final float CAMERA_MOVEMENT_SCALING_FACTOR = 0.1f;
-	private static final float CAMERA_MOVEMENT_THRESHOLD = 0.1f;
+	private static final float CAMERA_MOVEMENT_SCALING_FACTOR = 0.05f;
+	private static final float CAMERA_MOVEMENT_THRESHOLD = 0.06f;
 		
 	// Rendering variables
 	private GLSurfaceView gl_view;
@@ -396,7 +396,7 @@ public class RenderingEngineActivity extends Activity
 		{
 			logger.debug("CreateCharacterFromFile.onPostExecute(): Entering method.");
 			
-			logger.info("Character name: {}.", character.getName());
+			logger.info("Character name: \'{}\'.", character.getName());
 			this.progress_dialog.dismiss();
 			
 			logger.debug("CreateCharacterFromFile.onPostExecute(): Exiting method.");
@@ -537,8 +537,10 @@ public class RenderingEngineActivity extends Activity
 				recenter_camera = false;
 			}
 			else if(x_camera_movement > RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD || 
-					y_camera_movement > RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD)
-				this.custom_world.moveCamera(x_camera_movement, y_camera_movement);
+					y_camera_movement > RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD ||
+					x_camera_movement < -RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD || 
+					y_camera_movement < -RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD)
+				this.custom_world.rotateCamera(x_camera_movement, y_camera_movement);
 			
 			x_camera_movement = 0.0f;
 			y_camera_movement = 0.0f;

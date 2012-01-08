@@ -28,19 +28,29 @@ public class CustomWorld
 	private static final Logger logger = LoggerFactory.getLogger(CustomWorld.class);
 		
 	// Static variables
-	private static final float CAMERA_INITIAL_X_POSITION = 0;
-	private static final float CAMERA_INITIAL_Y_POSITION = -65;
-	private static final float CAMERA_INITIAL_Z_POSITION = 100;
-	private static final double CAMERA_RADIUS = Math.sqrt( Math.sqrt(CustomWorld.CAMERA_INITIAL_X_POSITION * CustomWorld.CAMERA_INITIAL_X_POSITION) + 
-			 											   Math.sqrt(CustomWorld.CAMERA_INITIAL_X_POSITION * CustomWorld.CAMERA_INITIAL_X_POSITION) +
-			 											   Math.sqrt(CustomWorld.CAMERA_INITIAL_X_POSITION * CustomWorld.CAMERA_INITIAL_X_POSITION) );
+	private static final float SPOTLIGHT_RED_VALUE = 500.0f;
+	private static final float SPOTLIGHT_GREEN_VALUE = 500.0f;
+	private static final float SPOTLIGHT_BLUE_VALUE = 500.0f;
+	
+	private static final float SPOTLIGHT_X_POSITION = 100.0f;
+	private static final float SPOTLIGHT_Y_POSITION = -100.0f;
+	private static final float SPOTLIGHT_Z_POSITION = 100.0f;
+	
+	private static final int AMBIENT_LIGHT_RED_VALUE = 75;
+	private static final int AMBIENT_LIGHT_GREEN_VALUE = 75;
+	private static final int AMBIENT_LIGHT_BLUE_VALUE = 75;
+	
+	//private static final float CAMERA_INITIAL_X_POSITION = 0;
+	//private static final float CAMERA_INITIAL_Y_POSITION = -65;
+	//private static final float CAMERA_INITIAL_Z_POSITION = 100;
+	
 	private static final String BOX_TEXTURE_NAME = "box_texture";
 	private static final String GROUND_TEXTURE_NAME = "ground_texture";
 	private static final String FPS_TEXTURE_NAME = "fps_texture";
 	private static final String BOX_OBJECT_NAME = "box_object";
 	private static final String GROUND_OBJECT_NAME = "ground_object";
 	
-	// Android resrouces
+	// Android resources
 	private Resources resources = null;
 	
 	// World
@@ -49,18 +59,13 @@ public class CustomWorld
 	// Graphics world objects
 	private Object3D ground_plane_object = null;
 	private Object3D box_object = null;
-	private Object3D object_at_center_of_scene = null;
 	private Light light = null;
 	private Texture font = null;
 	
-	// Number rendering constants
-	private static final int CHAR_WIDTH = 5;
-	private static final int CHAR_HEIGHT = 9;
-	private static final int CHAR_SRC_X_OFFSET = 5;
-	private static final int CHAR_SRC_Y_OFFSET = 0;
-	private static final int CHAR_DST_X_OFFSET = 5;
-	private static final int CHAR_DST_Y_OFFSET = 5;
-		
+	// Camera object
+	private CameraController camera_controller;
+	//private Object3D object_at_center_of_scene = null;
+			
 	public CustomWorld()
 	{
 		
@@ -78,23 +83,31 @@ public class CustomWorld
 		this.resources = resources;
 		
 		// Ordering of these methods is important
+		
+		// Graphic components
 		this.initializeWorld();
 		this.createTextures();
 		
+		// Scene
+		Object3D object_at_center = null;
 		if(character == null)
-			this.createInitialScene();
+			object_at_center = this.createInitialScene();
 		else
-			this.createAnimationScene();
+			object_at_center = this.createAnimationScene();
 		
+		// Lights
 		this.createLights();
-		this.resetCamera();
+		
+		// Camera
+		this.camera_controller = new CameraController(this.graphics_world.getCamera());
+		this.camera_controller.setObjectToLookAt(object_at_center);
 		
 		this.graphics_world.buildAllObjects();
 		
 		logger.debug("CustomWorld.createWorld(): Exiting method.");
 	}
 	
-	private void createInitialScene()
+	private Object3D createInitialScene()
 	{
 		logger.debug("CustomWorld.createInitialScene(): Entering method.");
 		
@@ -112,17 +125,19 @@ public class CustomWorld
 		this.box_object.translate(25.0f, -25.0f, 0.0f);
 		this.graphics_world.addObject(this.box_object);
 		
-		this.object_at_center_of_scene = this.box_object;
-		
 		logger.debug("CustomWorld.createInitialScene(): Exiting method.");
+		return this.box_object;
 	}
 	
-	private void createAnimationScene()
+	private Object3D createAnimationScene()
 	{
 		this.ground_plane_object = null;
 		this.box_object = null;
 		
 		// Character
+		// TODO
+		
+		return this.box_object;
 	}
 		
 	private void initializeWorld()
@@ -160,16 +175,18 @@ public class CustomWorld
 		logger.debug("CustomWorld.createLights(): Entering method.");
 		
 		this.light = new Light(this.graphics_world);
-		this.light.setIntensity(500, 500, 500);
+		this.light.setIntensity(CustomWorld.SPOTLIGHT_RED_VALUE,
+								CustomWorld.SPOTLIGHT_GREEN_VALUE, 
+								CustomWorld.SPOTLIGHT_BLUE_VALUE);
 		
-		SimpleVector sv = new SimpleVector();
-		sv.set(this.ground_plane_object.getTransformedCenter());
-		sv.x += 100.0f;
-		sv.y -= 100.0f;
-		sv.z += 100.0f;
+		SimpleVector sv = new SimpleVector(CustomWorld.SPOTLIGHT_X_POSITION, 
+										   CustomWorld.SPOTLIGHT_Y_POSITION, 
+										   CustomWorld.SPOTLIGHT_Z_POSITION);
 		this.light.setPosition(sv);
 		this.light.enable();
-		this.graphics_world.setAmbientLight(75, 75, 75);
+		this.graphics_world.setAmbientLight(CustomWorld.AMBIENT_LIGHT_RED_VALUE,
+											CustomWorld.AMBIENT_LIGHT_GREEN_VALUE,
+											CustomWorld.AMBIENT_LIGHT_BLUE_VALUE);
 		
 		logger.debug("CustomWorld.createLights(): Exiting method.");
 	}
@@ -181,14 +198,29 @@ public class CustomWorld
 			frameBuffer.clear();
 			this.graphics_world.renderScene(frameBuffer);
 			this.graphics_world.draw(frameBuffer);
-			this.blitNumber(frameBuffer, fps);
 		}
 		catch (Exception e) 
 		{
-			logger.error("CustomWorld.createLights(): Error rendering world=> {}", e.getMessage());
+			logger.error("CustomWorld.drawWorld(): Error rendering world=> {}", e.getMessage());
 		}
 	}
 	
+	public void resetCamera()
+	{
+		this.camera_controller.resetCamera();
+	}
+	
+	public void zoomCamera(float distance)
+	{
+		this.camera_controller.zoomCamera(distance);
+	}
+	
+	public void rotateCamera(float x, float y)
+	{
+		this.camera_controller.rotateCamera(x, y);
+	}
+	
+	/*
 	public void resetCamera()
 	{
 		logger.debug("CustomWorld.resetCamera(): Entering method.");
@@ -221,27 +253,5 @@ public class CustomWorld
 		
 		logger.debug("CustomWorld.moveCamera(): Exiting method.");
 	}
-	
-	private void blitNumber(FrameBuffer frameBuffer, int number) 
-	{
-		if (this.font != null) 
-		{
-			String number_string = Integer.toString(number);
-			int xDstOffset = CustomWorld.CHAR_DST_X_OFFSET;
-			for (int i = 0; i < number_string.length(); i++) 
-			{
-				char number_character = number_string.charAt(i);
-				int number_integer = number_character - 48;
-				frameBuffer.blit(font, 
-								 number_integer * CustomWorld.CHAR_SRC_X_OFFSET, 
-								 CustomWorld.CHAR_SRC_Y_OFFSET, 
-								 xDstOffset, 
-								 CustomWorld.CHAR_DST_Y_OFFSET, 
-								 CustomWorld.CHAR_WIDTH, 
-								 CustomWorld.CHAR_HEIGHT, 
-								 FrameBuffer.TRANSPARENT_BLITTING);
-				xDstOffset += 5;
-			}
-		}
-	}
+	*/
 }

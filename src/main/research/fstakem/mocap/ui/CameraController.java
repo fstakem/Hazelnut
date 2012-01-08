@@ -18,7 +18,6 @@ public class CameraController
 	private static final float CAMERA_MAX_DISTANCE = 500.0f;
 	private static final float CAMERA_INITIAL_DISTANCE = 150.0f;
 	private static final float CAMERA_INITIAL_HEIGHT_OFFSET = 0.0f;
-	private static final float INITIAL_TARGET_OBJECT_SCALE = 10.0F;
 	
 	// Variables
 	private Camera camera;
@@ -30,9 +29,10 @@ public class CameraController
 	private boolean is_x_screen_rotation_locked;
 	private boolean is_y_screen_rotation_locked;
 	
-	public CameraController(Camera camera)
+	public CameraController(Camera camera, Object3D object_to_look_at)
 	{
 		this.setCamera(camera);
+		this.setObjectToLookAt(object_to_look_at);
 		this.is_zoom_locked = false;
 		this.is_x_screen_rotation_locked = false;
 		this.is_y_screen_rotation_locked = false;
@@ -45,6 +45,19 @@ public class CameraController
 			throw new IllegalArgumentException("The camera object cannot be null.");
 		
 		this.camera = camera;
+	}
+	
+	public Object3D getObjectToLookAt()
+	{
+		return this.object_to_look_at;
+	}
+	
+	public void setObjectToLookAt(Object3D object)
+	{
+		if(object == null)
+			throw new IllegalArgumentException("The target object to follow cannot be null.");
+		
+		this.object_to_look_at = object;
 	}
 	
 	public boolean isZoomLocked()
@@ -77,24 +90,8 @@ public class CameraController
 		this.is_y_screen_rotation_locked = lock_y_screen_rotation;
 	}
 	
-	public Object3D getObjectToLookAt()
-	{
-		return this.object_to_look_at;
-	}
-	
-	public void setObjectToLookAt(Object3D object)
-	{
-		if(object == null)
-			throw new IllegalArgumentException("The target object to follow cannot be null.");
-		
-		this.object_to_look_at = object;
-	}
-	
 	public void resetCamera()
 	{
-		if(this.object_to_look_at == null)
-			this.object_to_look_at = Primitives.getBox(CameraController.INITIAL_TARGET_OBJECT_SCALE, 1.0f);
-		
 		this.distance_from_target = CameraController.CAMERA_INITIAL_DISTANCE;
 		SimpleVector vector = new SimpleVector(0, CameraController.CAMERA_INITIAL_HEIGHT_OFFSET, this.distance_from_target);
 		vector.add(this.object_to_look_at.getTransformedCenter());

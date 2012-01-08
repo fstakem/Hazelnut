@@ -40,10 +40,6 @@ public class CustomWorld
 	private static final int AMBIENT_LIGHT_GREEN_VALUE = 75;
 	private static final int AMBIENT_LIGHT_BLUE_VALUE = 75;
 	
-	//private static final float CAMERA_INITIAL_X_POSITION = 0;
-	//private static final float CAMERA_INITIAL_Y_POSITION = -65;
-	//private static final float CAMERA_INITIAL_Z_POSITION = 100;
-	
 	private static final String BOX_TEXTURE_NAME = "box_texture";
 	private static final String GROUND_TEXTURE_NAME = "ground_texture";
 	private static final String FPS_TEXTURE_NAME = "fps_texture";
@@ -64,7 +60,6 @@ public class CustomWorld
 	
 	// Camera object
 	private CameraController camera_controller;
-	//private Object3D object_at_center_of_scene = null;
 			
 	public CustomWorld()
 	{
@@ -99,8 +94,7 @@ public class CustomWorld
 		this.createLights();
 		
 		// Camera
-		this.camera_controller = new CameraController(this.graphics_world.getCamera());
-		this.camera_controller.setObjectToLookAt(object_at_center);
+		this.camera_controller = new CameraController(this.graphics_world.getCamera(), object_at_center);
 		
 		this.graphics_world.buildAllObjects();
 		
@@ -219,39 +213,4 @@ public class CustomWorld
 	{
 		this.camera_controller.rotateCamera(x, y);
 	}
-	
-	/*
-	public void resetCamera()
-	{
-		logger.debug("CustomWorld.resetCamera(): Entering method.");
-		
-		Camera camera = this.graphics_world.getCamera();
-		SimpleVector initial_position = new SimpleVector(CustomWorld.CAMERA_INITIAL_X_POSITION,
-													 	 CustomWorld.CAMERA_INITIAL_Y_POSITION,
-													 	 CustomWorld.CAMERA_INITIAL_Z_POSITION);
-		camera.setPosition(initial_position);
-		camera.lookAt(this.ground_plane_object.getTransformedCenter());
-		camera.setFOV(1.5f);
-		
-		logger.debug("CustomWorld.resetCamera(): Exiting method.");
-	}
-	
-	public void moveCamera(float x, float y)
-	{
-		logger.debug("CustomWorld.moveCamera(): Entering method.");
-		
-		Camera camera = this.graphics_world.getCamera();
-		SimpleVector current_position = camera.getPosition();
-		current_position.x += x;
-		current_position.y += y;
-		
-		// TODO
-		// Rotate around the center
-	
-		camera.setPosition(current_position);
-		camera.lookAt(this.ground_plane_object.getTransformedCenter());
-		
-		logger.debug("CustomWorld.moveCamera(): Exiting method.");
-	}
-	*/
 }

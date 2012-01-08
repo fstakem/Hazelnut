@@ -31,20 +31,28 @@ public class CameraController
 	
 	public CameraController(Camera camera, Object3D object_to_look_at)
 	{
+		logger.debug("CameraController(): Entering method.");
+		
 		this.setCamera(camera);
 		this.setObjectToLookAt(object_to_look_at);
 		this.is_zoom_locked = false;
 		this.is_x_screen_rotation_locked = false;
 		this.is_y_screen_rotation_locked = false;
 		this.resetCamera();
+		
+		logger.debug("CameraController(): Entering method.");
 	}
 	
 	public void setCamera(Camera camera)
 	{
+		logger.debug("CameraController.setCamera(): Entering method.");
+		
 		if(camera == null)
 			throw new IllegalArgumentException("The camera object cannot be null.");
 		
 		this.camera = camera;
+		
+		logger.debug("CameraController.setCamera(): Exiting method.");
 	}
 	
 	public Object3D getObjectToLookAt()
@@ -54,10 +62,14 @@ public class CameraController
 	
 	public void setObjectToLookAt(Object3D object)
 	{
+		logger.debug("CameraController.setObjectToLookAt(): Entering method.");
+		
 		if(object == null)
 			throw new IllegalArgumentException("The target object to follow cannot be null.");
 		
 		this.object_to_look_at = object;
+		
+		logger.debug("CameraController.setObjectToLookAt(): Exiting method.");
 	}
 	
 	public boolean isZoomLocked()
@@ -92,15 +104,21 @@ public class CameraController
 	
 	public void resetCamera()
 	{
+		logger.debug("CameraController.resetCamera(): Entering method.");
+		
 		this.distance_from_target = CameraController.CAMERA_INITIAL_DISTANCE;
 		SimpleVector vector = new SimpleVector(0, CameraController.CAMERA_INITIAL_HEIGHT_OFFSET, this.distance_from_target);
 		vector.add(this.object_to_look_at.getTransformedCenter());
 		this.camera.setPosition(vector);
 		this.camera.setOrientation(new SimpleVector(0.0f, 0.0f, -1.0f), new SimpleVector(0.0f, -1.0f, 0.0f));
+		
+		logger.debug("CameraController.resetCamera(): Exiting method.");
 	}
 	
 	public void zoomCamera(float distance)
 	{
+		logger.debug("CameraController.zoomCamera(): Entering method.");
+		
 		if(!this.is_zoom_locked)
 		{
 			this.distance_from_target += distance;
@@ -112,10 +130,14 @@ public class CameraController
 			
 			this.camera.moveCamera(Camera.CAMERA_MOVEIN, distance);
 		}
+		
+		logger.debug("CameraController.zoomCamera(): Exiting method.");
 	}
 	
 	public void rotateCamera(float screen_x, float screen_y)
 	{
+		logger.debug("CameraController.rotateCamera(): Entering method.");
+		
 		this.camera.setPosition(0.0f, 0.0f, 0.0f);
 		if(!this.is_x_screen_rotation_locked)
 			this.camera.rotateCameraY(screen_x);
@@ -123,7 +145,7 @@ public class CameraController
 			this.camera.rotateCameraX(screen_y);
 		this.camera.setPosition(this.object_to_look_at.getTransformedCenter());
 		this.camera.moveCamera(Camera.CAMERA_MOVEOUT, this.distance_from_target);
+		
+		logger.debug("CameraController.rotateCamera(): Exiting method.");
 	}
-	
-
 }

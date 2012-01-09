@@ -58,7 +58,6 @@ public class RenderingEngineActivity extends Activity
 	private static final float TOUCH_MOVEMENT_SCALING_FACTOR = 0.05f;
 	private static final float TOUCH_MOVEMENT_THRESHOLD = 0.06f;
 	private static final float TOUCH_ZOOM_DISTANCE_SCALING_FACTOR = 1.0f;
-	private static final float TOUCH_ZOOM_DISTANCE_THRESHOLD = 1.0f;
 		
 	// Rendering variables
 	private GLSurfaceView gl_view;
@@ -581,7 +580,7 @@ public class RenderingEngineActivity extends Activity
 				}
 				
 				float camera_zoom_ratio = zoom_ratio * RenderingEngineActivity.TOUCH_ZOOM_DISTANCE_SCALING_FACTOR;
-				if(camera_zoom_ratio > RenderingEngineActivity.TOUCH_ZOOM_DISTANCE_THRESHOLD)
+				if( camera_zoom_ratio > 0.0f )
 				{
 					logger.info("CustomRenderer.renderCustomWorld(): Zooming camera {}.", camera_zoom_ratio);
 					this.custom_world.zoomCamera(camera_zoom_ratio);

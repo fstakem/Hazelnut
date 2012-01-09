@@ -16,8 +16,10 @@ import javax.microedition.khronos.opengles.GL10;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.res.Resources;
+import android.graphics.PointF;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.FloatMath;
 import android.view.ContextMenu;  
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -52,9 +54,11 @@ public class RenderingEngineActivity extends Activity
 	private static RenderingEngineActivity master = null;
 	
 	// Interaction constants
-	private static final int LONG_PRESS_THRESHOLD_MS = 1000;
-	private static final float CAMERA_MOVEMENT_SCALING_FACTOR = 0.05f;
-	private static final float CAMERA_MOVEMENT_THRESHOLD = 0.06f;
+	private static final int LONG_PRESS_THRESHOLD_MS = 2000;
+	private static final float TOUCH_MOVEMENT_SCALING_FACTOR = 0.05f;
+	private static final float TOUCH_MOVEMENT_THRESHOLD = 0.06f;
+	private static final float TOUCH_ZOOM_DISTANCE_SCALING_FACTOR = 1.0f;
+	private static final float TOUCH_ZOOM_DISTANCE_THRESHOLD = 1.0f;
 		
 	// Rendering variables
 	private GLSurfaceView gl_view;
@@ -71,12 +75,14 @@ public class RenderingEngineActivity extends Activity
 	// Interaction variables
 	private GestureDetector gestureDetector;
 	View.OnTouchListener gestureListener;
+	private enum TouchState { NONE, MOVE, ZOOM };
+	private TouchState currentTouchState = TouchState.NONE;
 	private boolean recenter_camera = false;
-	private float x_touch_position = 0.0f;
-	private float y_touch_position = 0.0f;
-	private float x_camera_movement = 0.0f;
-	private float y_camera_movement = 0.0f;
-		
+	private PointF finger_position = new PointF();
+	private PointF delta_finger_position = new PointF();
+	private float last_distance_between_fingers = 0.0f;
+	private float zoom_ratio = 0.0f;
+	
 	protected void onCreate(Bundle savedInstanceState) 
 	{
 		logger.debug("RenderingEngineActivity.onCreate(): Entering method.");
@@ -166,43 +172,53 @@ public class RenderingEngineActivity extends Activity
 		} 
 	    else
 	    {
-	    	logger.info("RenderingEngineActivity.onTouchEvent(): (X, Y) => ({}, {})", me.getX(), me.getY());
-	    	
-	    	if (me.getAction() == MotionEvent.ACTION_DOWN) 
+	    	switch (me.getAction() & MotionEvent.ACTION_MASK)
 	    	{
-				this.x_touch_position = me.getX();
-				this.y_touch_position = me.getY();
-				
-				logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
-				return true;
-			}
-
-			if (me.getAction() == MotionEvent.ACTION_UP) 
-			{
-				this.x_touch_position = 0.0f;
-				this.y_touch_position = 0.0f;
-				this.x_camera_movement = 0.0f;
-				this.y_camera_movement = 0.0f;
-				
-				logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
-				return true;
-			}
-
-			if (me.getAction() == MotionEvent.ACTION_MOVE) 
-			{
-				float x_position_delta = me.getX() - this.x_touch_position;
-				float y_position_delta = me.getY() - this.y_touch_position;
-
-				this.x_touch_position = me.getX();
-				this.y_touch_position = me.getY();
-
-				this.x_camera_movement = x_position_delta * RenderingEngineActivity.CAMERA_MOVEMENT_SCALING_FACTOR;
-				this.y_camera_movement = y_position_delta * RenderingEngineActivity.CAMERA_MOVEMENT_SCALING_FACTOR;
-				
-				logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
-				return true;
-			}
-
+	    		case MotionEvent.ACTION_DOWN:
+	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_DOWN, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    			this.currentTouchState = TouchState.MOVE;
+	    			this.finger_position = new PointF(me.getX(), me.getY());
+	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
+					return true;
+	    		case MotionEvent.ACTION_POINTER_DOWN:
+	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_POINTER_DOWN, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    			this.currentTouchState = TouchState.ZOOM;
+	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
+					return true;
+	    		case MotionEvent.ACTION_UP:
+	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_UP, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
+					return true;
+	    		case MotionEvent.ACTION_POINTER_UP:
+	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_POINTER_UP, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    			this.currentTouchState = TouchState.NONE;
+	    			this.finger_position = new PointF();
+	    			this.delta_finger_position = new PointF();
+	    			this.last_distance_between_fingers = 0.0f;
+	    			this.zoom_ratio = 0.0f;
+	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
+					return true;
+	    		case MotionEvent.ACTION_MOVE:
+	    			if(this.currentTouchState == TouchState.MOVE)
+	    			{
+	    				logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_MOVE State => MOVE, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    				float delta_x = me.getX() - this.finger_position.x;
+	    				float delta_y = me.getY() - this.finger_position.y;
+	    				this.delta_finger_position = new PointF(delta_x, delta_y);
+	    				this.finger_position = new PointF(me.getX(), me.getY());		
+	    			}
+	    			else if(this.currentTouchState == TouchState.ZOOM)
+	    			{
+	    				logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_MOVE State => ZOOM, (X, Y) => ({}, {})", me.getX(), me.getY());
+	    				float distance_between_fingers = this.calculateDistanceBetweenFingers(me);
+	    				if(this.last_distance_between_fingers > 0.0f)
+	    					this.zoom_ratio = distance_between_fingers / this.last_distance_between_fingers;
+    					this.last_distance_between_fingers = distance_between_fingers;
+	    			}
+	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
+					return true;
+	    	}
+	    	
 			try 
 			{
 				Thread.sleep(15);
@@ -308,6 +324,20 @@ public class RenderingEngineActivity extends Activity
 		
 		logger.debug("RenderingEngineActivity.isFullscreenOpaque(): Exiting method.");
 		return true;
+	}
+	
+	private float calculateDistanceBetweenFingers(MotionEvent event) 
+	{
+		float x = event.getX(0) - event.getX(1);
+	    float y = event.getY(0) - event.getY(1);
+	    return FloatMath.sqrt(x * x + y * y);
+	 }
+
+	private void calculateMidPointBetweenFingers(PointF point, MotionEvent event) 
+	{
+		float x = event.getX(0) + event.getX(1);
+		float y = event.getY(0) + event.getY(1);
+		point.set(x / 2, y / 2);
 	}
 	
 	// Inner Class
@@ -531,19 +561,36 @@ public class RenderingEngineActivity extends Activity
 		
 		private synchronized void renderCustomWorld()
 		{
+			// TODO
 			if(recenter_camera)
 			{
 				this.custom_world.resetCamera();
 				recenter_camera = false;
 			}
-			else if(x_camera_movement > RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD || 
-					y_camera_movement > RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD ||
-					x_camera_movement < -RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD || 
-					y_camera_movement < -RenderingEngineActivity.CAMERA_MOVEMENT_THRESHOLD)
-				this.custom_world.rotateCamera(x_camera_movement, y_camera_movement);
+			else
+			{
+				float x_camera_movement = delta_finger_position.x * RenderingEngineActivity.TOUCH_MOVEMENT_SCALING_FACTOR;
+				float y_camera_movement = delta_finger_position.y * RenderingEngineActivity.TOUCH_MOVEMENT_SCALING_FACTOR;
+				if(x_camera_movement > RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD || 
+				   y_camera_movement > RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD ||
+				   x_camera_movement < -RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD || 
+				   y_camera_movement < -RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD)
+				{
+					logger.info("CustomRenderer.renderCustomWorld(): Rotating camera ({}, {}).", x_camera_movement, y_camera_movement);
+					this.custom_world.rotateCamera(x_camera_movement, y_camera_movement);
+				}
+				
+				float camera_zoom_ratio = zoom_ratio * RenderingEngineActivity.TOUCH_ZOOM_DISTANCE_SCALING_FACTOR;
+				if(camera_zoom_ratio > RenderingEngineActivity.TOUCH_ZOOM_DISTANCE_THRESHOLD)
+				{
+					logger.info("CustomRenderer.renderCustomWorld(): Zooming camera {}.", camera_zoom_ratio);
+					this.custom_world.zoomCamera(camera_zoom_ratio);
+				}
+				
+    			delta_finger_position = new PointF();
+    			camera_zoom_ratio = 0.0f;
+			}
 			
-			x_camera_movement = 0.0f;
-			y_camera_movement = 0.0f;
 			this.custom_world.drawWorld(frame_buffer, this.last_fps);
 		}
 	

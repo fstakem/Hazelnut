@@ -115,20 +115,26 @@ public class CameraController
 		logger.debug("CameraController.resetCamera(): Exiting method.");
 	}
 	
-	public void zoomCamera(float distance)
+	public void zoomCamera(float ratio)
 	{
 		logger.debug("CameraController.zoomCamera(): Entering method.");
 		
 		if(!this.is_zoom_locked)
 		{
-			this.distance_from_target += distance;
+			float new_distance = this.distance_from_target * ratio;
 			
-			if(this.distance_from_target > CameraController.CAMERA_MAX_DISTANCE)
-				this.distance_from_target = CameraController.CAMERA_MAX_DISTANCE;
-			else if(this.distance_from_target < CameraController.CAMERA_MIN_DISTANCE)
-				this.distance_from_target = CameraController.CAMERA_MIN_DISTANCE;
+			if(new_distance > CameraController.CAMERA_MAX_DISTANCE)
+				new_distance = CameraController.CAMERA_MAX_DISTANCE;
+			else if(new_distance < CameraController.CAMERA_MIN_DISTANCE)
+				new_distance = CameraController.CAMERA_MIN_DISTANCE;
 			
-			this.camera.moveCamera(Camera.CAMERA_MOVEIN, distance);
+			float movement_distance = this.distance_from_target - new_distance;
+			String values = "Initial distance " + String.valueOf(this.distance_from_target) + 
+							", new distance " + String.valueOf(new_distance) + 
+							", movement " + String.valueOf(movement_distance) + ".";
+			logger.info("CameraController.zoomCamera(): " + values);
+			this.distance_from_target = new_distance;
+			this.camera.moveCamera(Camera.CAMERA_MOVEIN, movement_distance);
 		}
 		
 		logger.debug("CameraController.zoomCamera(): Exiting method.");

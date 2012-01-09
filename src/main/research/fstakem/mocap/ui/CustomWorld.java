@@ -93,10 +93,11 @@ public class CustomWorld
 		// Lights
 		this.createLights();
 		
+		// Build world
+		this.graphics_world.buildAllObjects();
+		
 		// Camera
 		this.camera_controller = new CameraController(this.graphics_world.getCamera(), object_at_center);
-		
-		this.graphics_world.buildAllObjects();
 		
 		logger.debug("CustomWorld.createWorld(): Exiting method.");
 	}
@@ -204,9 +205,9 @@ public class CustomWorld
 		this.camera_controller.resetCamera();
 	}
 	
-	public void zoomCamera(float distance)
+	public void zoomCamera(float ratio)
 	{
-		this.camera_controller.zoomCamera(distance);
+		this.camera_controller.zoomCamera(ratio);
 	}
 	
 	public void rotateCamera(float x, float y)

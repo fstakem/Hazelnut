@@ -129,6 +129,8 @@ public class CustomWorld
 		this.ground_plane_object = null;
 		this.box_object = null;
 		
+		Object3D bone = Primitives.getCylinder(5.0f);
+		bone.setName("bone");
 		// Character
 		// TODO
 		

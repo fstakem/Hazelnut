@@ -121,7 +121,7 @@ public class CameraController
 		
 		if(!this.is_zoom_locked)
 		{
-			float new_distance = this.distance_from_target * ratio;
+			float new_distance = this.distance_from_target * 1 / ratio;
 			
 			if(new_distance > CameraController.CAMERA_MAX_DISTANCE)
 				new_distance = CameraController.CAMERA_MAX_DISTANCE;

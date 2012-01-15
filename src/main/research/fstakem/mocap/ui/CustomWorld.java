@@ -1,6 +1,10 @@
 package main.research.fstakem.mocap.ui;
 
 
+import java.util.ArrayList;
+
+import javax.vecmath.Vector3f;
+
 import research.fstakem.mocap.R;
 
 import android.content.res.Resources;
@@ -17,7 +21,11 @@ import com.threed.jpct.Texture;
 import com.threed.jpct.TextureManager;
 import com.threed.jpct.World;
 
+import main.research.fstakem.mocap.scene.Bone;
 import main.research.fstakem.mocap.scene.Character;
+import main.research.fstakem.mocap.scene.CharacterElement;
+import main.research.fstakem.mocap.scene.GraphicsObject;
+import main.research.fstakem.mocap.scene.RootElement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +34,9 @@ public class CustomWorld
 {
 	// Logger
 	private static final Logger logger = LoggerFactory.getLogger(CustomWorld.class);
+	
+	// Enums
+	public enum BoneObjectType { CYLINDER };
 		
 	// Static variables
 	private static final float SPOTLIGHT_RED_VALUE = 500.0f;
@@ -46,6 +57,9 @@ public class CustomWorld
 	private static final String BOX_OBJECT_NAME = "box_object";
 	private static final String GROUND_OBJECT_NAME = "ground_object";
 	
+	private static final BoneObjectType BONE_OBJECT_TYPE = CustomWorld.BoneObjectType.CYLINDER;
+	
+	
 	// Android resources
 	private Resources resources = null;
 	
@@ -55,6 +69,7 @@ public class CustomWorld
 	// Graphics world objects
 	private Object3D ground_plane_object = null;
 	private Object3D box_object = null;
+	private Character character = null;
 	private Light light = null;
 	private Texture font = null;
 	
@@ -88,7 +103,7 @@ public class CustomWorld
 		if(character == null)
 			object_at_center = this.createInitialScene();
 		else
-			object_at_center = this.createAnimationScene();
+			object_at_center = this.createAnimationScene(character);
 		
 		// Lights
 		this.createLights();
@@ -124,17 +139,59 @@ public class CustomWorld
 		return this.box_object;
 	}
 	
-	private Object3D createAnimationScene()
+	private Object3D createAnimationScene(Character character)
 	{
-		this.ground_plane_object = null;
+		logger.debug("CustomWorld.createAnimationScene(): Entering method.");
+		
 		this.box_object = null;
+		this.character = character;
 		
-		Object3D bone = Primitives.getCylinder(5.0f);
-		bone.setName("bone");
-		// Character
-		// TODO
+		// Ground plane
+		this.ground_plane_object = Primitives.getPlane(20, 10.0f);
+		this.ground_plane_object.setName(CustomWorld.GROUND_OBJECT_NAME);
+		this.ground_plane_object.rotateX((float) Math.PI / 2f);
+		this.ground_plane_object.setTexture(CustomWorld.GROUND_TEXTURE_NAME);
+		this.graphics_world.addObject(this.ground_plane_object);
 		
-		return this.box_object;
+		ArrayList<CharacterElement> character_elements = character.getAllCharacterElements();
+		for(CharacterElement character_element : character_elements)
+		{
+			if(character_element.getName() != RootElement.ROOT)
+			{
+				Bone bone = (Bone) character_element;
+				GraphicsObject bone_graphics_object = this.createBone(bone);
+			}
+		}
+		
+		logger.debug("CustomWorld.createAnimationScene(): Exiting method.");
+		return this.ground_plane_object;
+	}
+	
+	private JpctGraphicsObject createBone(Bone bone) 
+	{
+		logger.debug("CustomWorld.createBone(): Entering method.");
+		
+		JpctGraphicsObject bone_graphics_object = new JpctGraphicsObject();
+		
+		Object3D object = Primitives.getCylinder(90, 1.0f, bone.getLength());
+		object.setName(bone.getName());
+		Vector3f start_position = bone.getStartPosition();
+		object.translate(start_position.x, start_position.y, start_position.z);
+		Vector3f orientation = bone.getGlobalOrientation();
+		object.rotateX(orientation.x);
+		object.rotateY(orientation.y);
+		object.rotateZ(orientation.z);
+		
+		String bone_info = "Creating bone graphics object \'" + bone.getName() + "\'";
+		bone_info += " with location (" + String.valueOf(start_position.x) + ", " + String.valueOf(start_position.y) + ", " + String.valueOf(start_position.z) + ")";
+		bone_info += " and rotation (" + String.valueOf(orientation.x) + ", " + String.valueOf(orientation.y) + ", " + String.valueOf(orientation.z) + ")";
+		logger.debug("CustomWorld.createBone(): {}.", bone_info);
+		
+		bone_graphics_object.setGraphicsObject(object);
+		this.graphics_world.addObject(object);
+		
+		logger.debug("CustomWorld.createBone(): Exiting method.");
+		return bone_graphics_object;
 	}
 		
 	private void initializeWorld()

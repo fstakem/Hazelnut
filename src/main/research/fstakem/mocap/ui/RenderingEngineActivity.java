@@ -64,6 +64,10 @@ public class RenderingEngineActivity extends Activity
 	private CustomRenderer renderer = null;
 	private FrameBuffer frame_buffer = null;
 	
+	// Animation variables
+	private boolean was_character_added = false;
+	private Character main_character = null;
+	
 	// Activity variables
 	private boolean is_activity_paused = false;
 	
@@ -265,7 +269,7 @@ public class RenderingEngineActivity extends Activity
 			   Resources resources = getResources();
 			   InputStream asf_input = resources.openRawResource(R.raw.asf);
 			   InputStream amc_input = resources.openRawResource(R.raw.amc);
-			   CreateCharacterFromFile create_char_from_file = new CreateCharacterFromFile();
+			   CreateCharacterFromFileTask create_char_from_file = new CreateCharacterFromFileTask();
 			   create_char_from_file.execute("George", asf_input, amc_input);
 			   break;
 		   }
@@ -361,7 +365,7 @@ public class RenderingEngineActivity extends Activity
     
     // Inner Class
     // ***********
-    private class CreateCharacterFromFile extends AsyncTask<Object, Void, Character> 
+    private class CreateCharacterFromFileTask extends AsyncTask<Object, Void, Character> 
     {
     	private ProgressDialog progress_dialog;
     	private String character_name = "";
@@ -419,6 +423,8 @@ public class RenderingEngineActivity extends Activity
 			logger.debug("CreateCharacterFromFile.onPostExecute(): Entering method.");
 			
 			logger.info("Character name: \'{}\'.", character.getName());
+			main_character = character;
+			was_character_added = true;
 			this.progress_dialog.dismiss();
 			
 			logger.debug("CreateCharacterFromFile.onPostExecute(): Exiting method.");
@@ -557,6 +563,11 @@ public class RenderingEngineActivity extends Activity
 			{
 				this.custom_world.resetCamera();
 				recenter_camera = false;
+			}
+			else if(was_character_added)
+			{
+				loadCharacter(main_character);
+				was_character_added = false;
 			}
 			else
 			{

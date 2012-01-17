@@ -177,14 +177,14 @@ public class CustomWorld
 		object.setName(bone.getName());
 		Vector3f start_position = bone.getStartPosition();
 		object.translate(start_position.x, start_position.y, start_position.z);
-		Vector3f orientation = bone.getGlobalOrientation();
+		Vector3f orientation = bone.getOrientation();
 		object.rotateX(orientation.x);
 		object.rotateY(orientation.y);
 		object.rotateZ(orientation.z);
 		
-		String bone_info = "Creating bone graphics object \'" + bone.getName() + "\'";
-		bone_info += " with location (" + String.valueOf(start_position.x) + ", " + String.valueOf(start_position.y) + ", " + String.valueOf(start_position.z) + ")";
-		bone_info += " and rotation (" + String.valueOf(orientation.x) + ", " + String.valueOf(orientation.y) + ", " + String.valueOf(orientation.z) + ")";
+		StringBuilder bone_info = new StringBuilder();
+		bone_info.append("Creating bone graphics object => ");
+		bone_info.append(bone.toString());
 		logger.debug("CustomWorld.createBone(): {}.", bone_info);
 		
 		bone_graphics_object.setGraphicsObject(object);

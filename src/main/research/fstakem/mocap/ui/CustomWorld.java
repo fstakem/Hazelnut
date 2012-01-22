@@ -2,6 +2,7 @@ package main.research.fstakem.mocap.ui;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.vecmath.Vector3f;
 
@@ -9,7 +10,6 @@ import research.fstakem.mocap.R;
 
 import android.content.res.Resources;
 
-import com.threed.jpct.Camera;
 import com.threed.jpct.Config;
 import com.threed.jpct.FrameBuffer;
 import com.threed.jpct.Light;
@@ -24,7 +24,6 @@ import com.threed.jpct.World;
 import main.research.fstakem.mocap.scene.Bone;
 import main.research.fstakem.mocap.scene.Character;
 import main.research.fstakem.mocap.scene.CharacterElement;
-import main.research.fstakem.mocap.scene.GraphicsObject;
 import main.research.fstakem.mocap.scene.RootElement;
 
 import org.slf4j.Logger;
@@ -153,47 +152,22 @@ public class CustomWorld
 		this.ground_plane_object.setTexture(CustomWorld.GROUND_TEXTURE_NAME);
 		this.graphics_world.addObject(this.ground_plane_object);
 		
-		ArrayList<CharacterElement> character_elements = character.getAllCharacterElements();
+		List<CharacterElement> character_elements = character.getAllCharacterElements();
 		for(CharacterElement character_element : character_elements)
 		{
 			if(character_element.getName() != RootElement.ROOT)
 			{
 				Bone bone = (Bone) character_element;
-				GraphicsObject bone_graphics_object = this.createBone(bone);
+				JpctBone jpct_bone = new JpctBone(bone);
+				logger.info("Creating object => {}", bone.toString());
+				this.graphics_world.addObject(jpct_bone.getGraphicsObject());
 			}
 		}
 		
 		logger.debug("CustomWorld.createAnimationScene(): Exiting method.");
 		return this.ground_plane_object;
 	}
-	
-	private JpctGraphicsObject createBone(Bone bone) 
-	{
-		logger.debug("CustomWorld.createBone(): Entering method.");
-		
-		JpctGraphicsObject bone_graphics_object = new JpctGraphicsObject();
-		
-		Object3D object = Primitives.getCylinder(90, 1.0f, bone.getLength());
-		object.setName(bone.getName());
-		Vector3f start_position = bone.getStartPosition();
-		object.translate(start_position.x, start_position.y, start_position.z);
-		Vector3f orientation = bone.getOrientation();
-		object.rotateX(orientation.x);
-		object.rotateY(orientation.y);
-		object.rotateZ(orientation.z);
-		
-		StringBuilder bone_info = new StringBuilder();
-		bone_info.append("Creating bone graphics object => ");
-		bone_info.append(bone.toString());
-		logger.debug("CustomWorld.createBone(): {}.", bone_info);
-		
-		bone_graphics_object.setGraphicsObject(object);
-		this.graphics_world.addObject(object);
-		
-		logger.debug("CustomWorld.createBone(): Exiting method.");
-		return bone_graphics_object;
-	}
-		
+			
 	private void initializeWorld()
 	{
 		logger.debug("CustomWorld.initializeWorld(): Entering method.");

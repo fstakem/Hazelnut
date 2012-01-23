@@ -50,15 +50,12 @@ public class RenderingEngineActivity extends Activity
 	// Logger
 	private static final Logger logger = LoggerFactory.getLogger(RenderingEngineActivity.class);
 	
+	// App settings
+	ApplicationSettings app_settings;
+	
 	// Used to handle pause and resume...
 	private static RenderingEngineActivity master = null;
 	
-	// Interaction constants
-	private static final int LONG_PRESS_THRESHOLD_MS = 2000;
-	private static final float TOUCH_MOVEMENT_SCALING_FACTOR = 0.05f;
-	private static final float TOUCH_MOVEMENT_THRESHOLD = 0.06f;
-	private static final float TOUCH_ZOOM_DISTANCE_SCALING_FACTOR = 1.0f;
-		
 	// Rendering variables
 	private GLSurfaceView gl_view;
 	private CustomRenderer renderer = null;
@@ -71,15 +68,11 @@ public class RenderingEngineActivity extends Activity
 	// Activity variables
 	private boolean is_activity_paused = false;
 	
-	// UI variables
-	// add something to hide show the fps
-	// add something to allow disallow changing the view point
-	
 	// Interaction variables
 	private GestureDetector gestureDetector;
 	View.OnTouchListener gestureListener;
 	private enum TouchState { NONE, MOVE, ZOOM };
-	private TouchState currentTouchState = TouchState.NONE;
+	private TouchState current_touch_state = TouchState.NONE;
 	private boolean recenter_camera = false;
 	private PointF finger_position = new PointF();
 	private PointF delta_finger_position = new PointF();
@@ -94,6 +87,7 @@ public class RenderingEngineActivity extends Activity
 			this.copyActivityState(RenderingEngineActivity.master);
 		
 		super.onCreate(savedInstanceState);
+		this.app_settings = new ApplicationSettings();
 		this.gl_view = new GLSurfaceView(getApplication());
 		this.gl_view.setEGLConfigChooser(new GLSurfaceView.EGLConfigChooser() 
 		
@@ -179,13 +173,13 @@ public class RenderingEngineActivity extends Activity
 	    	{
 	    		case MotionEvent.ACTION_DOWN:
 	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_DOWN, (X, Y) => ({}, {})", me.getX(), me.getY());
-	    			this.currentTouchState = TouchState.MOVE;
+	    			this.current_touch_state = TouchState.MOVE;
 	    			this.finger_position = new PointF(me.getX(), me.getY());
 	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
 					return true;
 	    		case MotionEvent.ACTION_POINTER_DOWN:
 	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_POINTER_DOWN, (X, Y) => ({}, {})", me.getX(), me.getY());
-	    			this.currentTouchState = TouchState.ZOOM;
+	    			this.current_touch_state = TouchState.ZOOM;
 	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
 					return true;
 	    		case MotionEvent.ACTION_UP:
@@ -194,7 +188,7 @@ public class RenderingEngineActivity extends Activity
 					return true;
 	    		case MotionEvent.ACTION_POINTER_UP:
 	    			logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_POINTER_UP, (X, Y) => ({}, {})", me.getX(), me.getY());
-	    			this.currentTouchState = TouchState.NONE;
+	    			this.current_touch_state = TouchState.NONE;
 	    			this.finger_position = new PointF();
 	    			this.delta_finger_position = new PointF();
 	    			this.last_distance_between_fingers = 0.0f;
@@ -202,7 +196,7 @@ public class RenderingEngineActivity extends Activity
 	    			logger.debug("RenderingEngineActivity.onTouchEvent(): Exiting method.");
 					return true;
 	    		case MotionEvent.ACTION_MOVE:
-	    			if(this.currentTouchState == TouchState.MOVE)
+	    			if(this.current_touch_state == TouchState.MOVE)
 	    			{
 	    				logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_MOVE State => MOVE, (X, Y) => ({}, {})", me.getX(), me.getY());
 	    				float delta_x = me.getX() - this.finger_position.x;
@@ -210,7 +204,7 @@ public class RenderingEngineActivity extends Activity
 	    				this.delta_finger_position = new PointF(delta_x, delta_y);
 	    				this.finger_position = new PointF(me.getX(), me.getY());		
 	    			}
-	    			else if(this.currentTouchState == TouchState.ZOOM)
+	    			else if(this.current_touch_state == TouchState.ZOOM)
 	    			{
 	    				logger.info("RenderingEngineActivity.onTouchEvent(): ACTION_MOVE State => ZOOM, (X, Y) => ({}, {})", me.getX(), me.getY());
 	    				float distance_between_fingers = this.calculateDistanceBetweenFingers(me);
@@ -275,14 +269,17 @@ public class RenderingEngineActivity extends Activity
 		   }
 		   case research.fstakem.mocap.R.id.find_remote_characters:
 		   {
+			   Toast.makeText(getApplicationContext(), "Remote characters are not currently supported.", Toast.LENGTH_LONG).show();
 			   break;
 		   }
 		   case research.fstakem.mocap.R.id.settings:
 		   {
+			   Toast.makeText(getApplicationContext(), "Changing the settings is not currently supported.", Toast.LENGTH_LONG).show();
 			   break;
 		   }
 		   case research.fstakem.mocap.R.id.about:
 		   {
+			   Toast.makeText(getApplicationContext(), "The about dialog has not been created.", Toast.LENGTH_LONG).show();
 			   break;
 		   }   
 		}
@@ -349,17 +346,6 @@ public class RenderingEngineActivity extends Activity
     		
     		logger.debug("SimpleCustomGestureDetector.onDoubleTap(): Exiting method.");
 			return false;
-    	}
-    	
-    	@Override
-    	public void onLongPress(MotionEvent e)
-    	{
-    		logger.debug("SimpleCustomGestureDetector.onLongPress(): Entering method.");
-    		
-    		if(e.getDownTime() > RenderingEngineActivity.LONG_PRESS_THRESHOLD_MS)
-    			Toast.makeText(getApplicationContext(), "LONG PRESS", Toast.LENGTH_SHORT).show();
-    		
-    		logger.debug("SimpleCustomGestureDetector.onLongPress(): Exiting method.");
     	}
     }
     
@@ -571,18 +557,18 @@ public class RenderingEngineActivity extends Activity
 			}
 			else
 			{
-				float x_camera_movement = delta_finger_position.x * RenderingEngineActivity.TOUCH_MOVEMENT_SCALING_FACTOR;
-				float y_camera_movement = delta_finger_position.y * RenderingEngineActivity.TOUCH_MOVEMENT_SCALING_FACTOR;
-				if(x_camera_movement > RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD || 
-				   y_camera_movement > RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD ||
-				   x_camera_movement < -RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD || 
-				   y_camera_movement < -RenderingEngineActivity.TOUCH_MOVEMENT_THRESHOLD)
+				float x_camera_movement = delta_finger_position.x * ApplicationSettings.TOUCH_MOVEMENT_SCALING_FACTOR;
+				float y_camera_movement = delta_finger_position.y * ApplicationSettings.TOUCH_MOVEMENT_SCALING_FACTOR;
+				if(x_camera_movement > ApplicationSettings.TOUCH_MOVEMENT_THRESHOLD || 
+				   y_camera_movement > ApplicationSettings.TOUCH_MOVEMENT_THRESHOLD ||
+				   x_camera_movement < -ApplicationSettings.TOUCH_MOVEMENT_THRESHOLD || 
+				   y_camera_movement < -ApplicationSettings.TOUCH_MOVEMENT_THRESHOLD)
 				{
 					logger.info("CustomRenderer.renderCustomWorld(): Rotating camera ({}, {}).", x_camera_movement, y_camera_movement);
 					this.custom_world.rotateCamera(x_camera_movement, y_camera_movement);
 				}
 				
-				float camera_zoom_ratio = zoom_ratio * RenderingEngineActivity.TOUCH_ZOOM_DISTANCE_SCALING_FACTOR;
+				float camera_zoom_ratio = zoom_ratio * ApplicationSettings.TOUCH_ZOOM_DISTANCE_SCALING_FACTOR;
 				if( camera_zoom_ratio > 0.0f )
 				{
 					logger.info("CustomRenderer.renderCustomWorld(): Zooming camera {}.", camera_zoom_ratio);

@@ -16,6 +16,7 @@ import com.threed.jpct.Light;
 import com.threed.jpct.Loader;
 import com.threed.jpct.Object3D;
 import com.threed.jpct.Primitives;
+import com.threed.jpct.RGBColor;
 import com.threed.jpct.SimpleVector;
 import com.threed.jpct.Texture;
 import com.threed.jpct.TextureManager;
@@ -102,7 +103,8 @@ public class CustomWorld
 		if(character == null)
 			object_at_center = this.createInitialScene();
 		else
-			object_at_center = this.createAnimationScene(character);
+			object_at_center = this.createAnimationSceneTest(character);
+			//object_at_center = this.createAnimationScene(character);
 		
 		// Lights
 		this.createLights();
@@ -166,6 +168,54 @@ public class CustomWorld
 		
 		logger.debug("CustomWorld.createAnimationScene(): Exiting method.");
 		return this.ground_plane_object;
+	}
+	
+	private Object3D createAnimationSceneTest(Character character)
+	{
+		logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Entering method.");
+		JpctTestBone jpct_bone = null;
+		
+		List<CharacterElement> character_elements = character.getAllCharacterElements();
+		for(CharacterElement character_element : character_elements)
+		{
+			if(character_element.getName() != RootElement.ROOT)
+			{
+				Bone bone = (Bone) character_element;
+				jpct_bone = new JpctTestBone(bone);
+				logger.info("Creating object => {}", bone.toString());
+				this.graphics_world.addObject(jpct_bone.getGraphicsObject());
+				
+				
+				bone.getOrientation();
+				bone.getStartPosition();
+				
+				int faces = 90;
+				float scale = 2.0f;
+				Object3D x_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
+				Object3D y_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
+				Object3D z_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
+				
+				
+				x_axis.setAdditionalColor( RGBColor.RED );
+				y_axis.setAdditionalColor( RGBColor.BLUE );
+				z_axis.setAdditionalColor( RGBColor.GREEN );
+				
+				SimpleVector sp = new SimpleVector(bone.getStartPosition().x, bone.getStartPosition().y, bone.getStartPosition().z);
+				x_axis.setOrigin(sp);
+				y_axis.setOrigin(sp);
+				z_axis.setOrigin(sp);
+				
+				this.graphics_world.addObject(x_axis);
+				this.graphics_world.addObject(y_axis);
+				this.graphics_world.addObject(z_axis);
+				
+				
+				break;
+			}
+		}
+		
+		logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Exiting method.");
+		return jpct_bone.getGraphicsObject();
 	}
 			
 	private void initializeWorld()

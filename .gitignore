@@ -33,6 +33,7 @@ local.properties
 *.tmproj
 .classpath
 .project
+.settings/
 
 # Packages #
 ############

@@ -14,6 +14,7 @@ import com.threed.jpct.Config;
 import com.threed.jpct.FrameBuffer;
 import com.threed.jpct.Light;
 import com.threed.jpct.Loader;
+import com.threed.jpct.Matrix;
 import com.threed.jpct.Object3D;
 import com.threed.jpct.Primitives;
 import com.threed.jpct.RGBColor;
@@ -39,9 +40,9 @@ public class CustomWorld
 	public enum BoneObjectType { CYLINDER };
 		
 	// Static variables
-	private static final float SPOTLIGHT_RED_VALUE = 500.0f;
-	private static final float SPOTLIGHT_GREEN_VALUE = 500.0f;
-	private static final float SPOTLIGHT_BLUE_VALUE = 500.0f;
+	private static final float SPOTLIGHT_RED_VALUE = 50.0f;
+	private static final float SPOTLIGHT_GREEN_VALUE = 50.0f;
+	private static final float SPOTLIGHT_BLUE_VALUE = 50.0f;
 	
 	private static final float SPOTLIGHT_X_POSITION = 100.0f;
 	private static final float SPOTLIGHT_Y_POSITION = -100.0f;
@@ -175,47 +176,73 @@ public class CustomWorld
 		logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Entering method.");
 		JpctTestBone jpct_bone = null;
 		
+		int faces = 90;
+		float scale = 2.0f;
+		Object3D x_axis = Primitives.getCylinder(faces, scale, 10 * 1.0f);
+		Object3D y_axis = Primitives.getCylinder(faces, scale, 10 * 1.0f);
+		Object3D z_axis = Primitives.getCylinder(faces, scale, 10 * 1.0f);
+		
+		x_axis.setAdditionalColor( RGBColor.RED );
+		y_axis.setAdditionalColor( RGBColor.BLUE );
+		z_axis.setAdditionalColor( RGBColor.GREEN );
+		
+		SimpleVector sp = new SimpleVector(0, 0, 0);
+		x_axis.setOrigin(sp);
+		y_axis.setOrigin(sp);
+		z_axis.setOrigin(sp);
+		
+		//x_axis.rotateX(-3.14f/4.0f);
+		//y_axis.rotateY(-3.14f/4.0f);
+		z_axis.rotateZ(-3.14f/4.0f);
+		
+		this.graphics_world.addObject(x_axis);
+		this.graphics_world.addObject(y_axis);
+		this.graphics_world.addObject(z_axis);
+		
 		List<CharacterElement> character_elements = character.getAllCharacterElements();
 		for(CharacterElement character_element : character_elements)
 		{
-			if(character_element.getName() != RootElement.ROOT)
+			logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Working on bone: {}.", character_element.getName());
+			if(character_element.getName().equals("lhipjoint-")  || character_element.getName().equals("lfemur-"))
 			{
+				logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Working on bone: {}.", character_element.getName());
 				Bone bone = (Bone) character_element;
+				bone.setDirection(new Vector3f(0.5f, 0.0f, 0.0f));
 				jpct_bone = new JpctTestBone(bone);
-				logger.info("Creating object => {}", bone.toString());
 				this.graphics_world.addObject(jpct_bone.getGraphicsObject());
 				
+				String name = bone.getName();
+				Vector3f orientation = bone.getOrientation();
+				Vector3f position = bone.getStartPosition();
+				Vector3f direction = bone.getDirection();
+				float length = bone.getLength();
+				logger.info("++++ Bone => Name {}", name);
+				logger.info("++++ Bone => Starting point {}", position.toString());
+				logger.info("++++ Bone => Orientation {}", orientation.toString());
+				logger.info("++++ Bone => Direction {}", direction.toString());
+				logger.info("++++ Bone => Length {}", String.valueOf(length));
 				
-				bone.getOrientation();
-				bone.getStartPosition();
-				
-				int faces = 90;
-				float scale = 2.0f;
-				Object3D x_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
-				Object3D y_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
-				Object3D z_axis = Primitives.getCylinder(faces, scale, 10 * bone.getLength());
-				
-				
-				x_axis.setAdditionalColor( RGBColor.RED );
-				y_axis.setAdditionalColor( RGBColor.BLUE );
-				z_axis.setAdditionalColor( RGBColor.GREEN );
-				
-				SimpleVector sp = new SimpleVector(bone.getStartPosition().x, bone.getStartPosition().y, bone.getStartPosition().z);
-				x_axis.setOrigin(sp);
-				y_axis.setOrigin(sp);
-				z_axis.setOrigin(sp);
-				
-				this.graphics_world.addObject(x_axis);
-				this.graphics_world.addObject(y_axis);
-				this.graphics_world.addObject(z_axis);
+				Object3D object = jpct_bone.getGraphicsObject();
+				SimpleVector tc = object.getTransformedCenter();
+				SimpleVector t = object.getTranslation();
+				SimpleVector xa = object.getXAxis();
+				SimpleVector ya = object.getYAxis();
+				SimpleVector za = object.getZAxis();
+				Matrix rm = object.getRotationMatrix();
 				
 				
-				break;
+				logger.info("++++ JpctBone => Name {}", object.getName());
+				logger.info("++++ JpctBone => Transformed Center {}", tc.toString());
+				logger.info("++++ JpctBone => Translation from Center {}", t.toString());
+				logger.info("++++ JpctBone => X Axis {}", xa.toString());
+				logger.info("++++ JpctBone => Y Axis {}", ya.toString());
+				logger.info("++++ JpctBone => Z Axis {}", za.toString());
+				logger.info("++++ JpctBone => Rotation Matrix {}", rm.toString());
 			}
 		}
 		
 		logger.debug("CustomWorld.createAnimationSceneTest()++++++++++: Exiting method.");
-		return jpct_bone.getGraphicsObject();
+		return x_axis;
 	}
 			
 	private void initializeWorld()
